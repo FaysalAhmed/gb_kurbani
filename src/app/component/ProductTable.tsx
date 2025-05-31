@@ -21,13 +21,13 @@ const products = [
 		image: "/images/Offer-Product-shahi-mosla.jpg",
 		sku: "A000227",
 		name: "শাহী মসলা/Shahi Masala 50gm",
-		price: "00",
+		price: "Free",
 	},
 	{
 		image: "/images/Offer-product-kala-bhuna.jpg",
 		sku: "A000226",
 		name: "Kala Bhuna Masala-50gm",
-		price: "00",
+		price: "Free",
 	},
 ];
 
@@ -60,7 +60,9 @@ const ProductTable = () => {
 							</TableCell>
 							<TableCell>{product.sku}</TableCell>
 							<TableCell>{product.name}</TableCell>
-							<TableCell className="text-right">{product.price}</TableCell>
+							<TableCell className="text-right font-semibold">
+								{product.price}
+							</TableCell>
 						</TableRow>
 					))}
 				</TableBody>

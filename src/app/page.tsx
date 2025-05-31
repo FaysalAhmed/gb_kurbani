@@ -1,5 +1,5 @@
 import BrandLogo from "./component/BrandLogo";
-import OrderSummary from "./component/OrderSummary";
+import CheckoutForm from "./component/CheckoutForm";
 import ProductCard from "./component/ProductCard";
 import ProductOfferDetails from "./component/ProductOfferDetails";
 import ProductTable from "./component/ProductTable";
@@ -11,7 +11,7 @@ export default function Home() {
 			<ProductCard />
 			<ProductOfferDetails />
 			<ProductTable />
-			<OrderSummary />
+			<CheckoutForm />
 		</div>
 	);
 }
