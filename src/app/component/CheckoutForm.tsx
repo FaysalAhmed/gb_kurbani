@@ -4,10 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+
+import { toast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { getBaseUrl } from "../helper/getBaseUrl";
 import OrderSummary from "./OrderSummary";
 
 const FormSchema = z.object({
@@ -36,12 +40,13 @@ const CheckoutForm = () => {
 		null: 0,
 	} as const;
 
-	type Location = keyof typeof deliveryCharges; // "dhaka" | "chattogram" | "others"
+	type Location = keyof typeof deliveryCharges; // "dhaka" | "chattogram" | "others" | "null"
 
 	const [selectedLocation, setSelectedLocation] = useState<Location>("null");
 	const [selectedCharge, setSelectedCharge] = useState<number>(
 		deliveryCharges["null"]
 	);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 
 	const {
 		register,
@@ -57,6 +62,57 @@ const CheckoutForm = () => {
 		console.log(data);
 	};
 
+	const nuportOrderProductsDetails = [
+		{
+			productId: "A000034",
+			quantity: 1,
+		},
+		{
+			productId: "A000227",
+			quantity: 1,
+		},
+		{
+			productId: "A000226",
+			quantity: 1,
+		},
+	];
+
+	const handleSubmitForm = async (formData: FormData) => {
+		setIsLoading(true);
+		try {
+			const reqCheckoutBodyForNuport = {
+				distributorAdvancePayment: 0,
+				products: nuportOrderProductsDetails,
+				discountAmount: 300,
+				distributor: {
+					name: formData.name,
+					phone: formData.phone,
+					address: formData.address,
+				},
+				deliveryCharge: selectedCharge,
+			};
+
+			const response = await axios.post(
+				`${getBaseUrl(true)}/nuport`,
+				reqCheckoutBodyForNuport
+			);
+
+			toast({
+				title: "অর্ডার সফলভাবে সম্পন্ন হয়েছে",
+				description: "আপনার অর্ডার গ্রহণ করা হয়েছে।",
+			});
+		} catch (error: any) {
+			toast({
+				title: "অর্ডার ব্যর্থ হয়েছে",
+				description:
+					error?.response?.data?.message || "দয়া করে আবার চেষ্টা করুন।",
+				variant: "destructive",
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	// Auto-clear errors after 3 seconds
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -68,12 +124,17 @@ const CheckoutForm = () => {
 	}, [errors, clearErrors]);
 	return (
 		<form
-			onSubmit={handleSubmit(onSubmit)}
+			onSubmit={handleSubmit(handleSubmitForm)}
 			className="w-full lg:max-w-[900px] mx-auto space-y-4 p-4"
 		>
 			<div>
 				<Label htmlFor="name">নাম</Label>
-				<Input id="name" {...register("name")} className="mt-1" />
+				<Input
+					id="name"
+					{...register("name")}
+					className="mt-1 placeholder:text-xs"
+					placeholder="আপনার নাম লিখুন"
+				/>
 				{errors.name && (
 					<p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
 				)}
@@ -86,7 +147,8 @@ const CheckoutForm = () => {
 					type="tel"
 					inputMode="numeric"
 					{...register("phone")}
-					className="mt-1"
+					className="mt-1 placeholder:text-xs"
+					placeholder="০১৭০০০০০০০০"
 				/>
 				{errors.phone && (
 					<p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
@@ -94,10 +156,10 @@ const CheckoutForm = () => {
 			</div>
 
 			<div>
-				<Label>লোকেশন</Label>
+				<Label>ডেলিভারি চার্জ</Label>
 				<RadioGroup
 					{...register("location")}
-					className="flex flex-wrap gap-4 mt-2"
+					className="flex flex-col gap-4 mt-2"
 					value={selectedLocation}
 					onValueChange={(value: Location) => {
 						const charge = deliveryCharges[value];
@@ -107,16 +169,16 @@ const CheckoutForm = () => {
 				>
 					<div className="flex items-center space-x-2">
 						<RadioGroupItem value="dhaka" id="dhaka" />
-						<Label htmlFor="dhaka">ঢাকা সিটি ডেলিভারি tk ৭০.০০</Label>
+						<Label htmlFor="dhaka">ঢাকা সিটি 70.00</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<RadioGroupItem value="chattogram" id="chattogram" />
-						<Label htmlFor="chattogram">চট্টগ্রাম সিটি ডেলিভারি tk ৭০.০০</Label>
+						<Label htmlFor="chattogram">চট্টগ্রাম সিটি 70.00</Label>
 					</div>
 					<div className="flex items-center space-x-2">
 						<RadioGroupItem value="others" id="others" />
 						<Label htmlFor="others">
-							ঢাকা এবং চট্টগ্রাম সিটির বাহিরে tk ১৩০.০০
+							ঢাকা এবং চট্টগ্রাম সিটির বাহিরে 130.00
 						</Label>
 					</div>
 				</RadioGroup>
@@ -127,7 +189,12 @@ const CheckoutForm = () => {
 
 			<div>
 				<Label htmlFor="address">এড্রেস</Label>
-				<Textarea id="address" {...register("address")} className="mt-1" />
+				<Textarea
+					id="address"
+					{...register("address")}
+					className="mt-1 placeholder:text-xs"
+					placeholder="আপনার ডেলিভারির ঠিকানা লিখুন"
+				/>
 				{errors.address && (
 					<p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
 				)}
@@ -137,8 +204,12 @@ const CheckoutForm = () => {
 			</div>
 
 			<div className="ct-flex-center ">
-				<Button type="submit" className="w-80">
-					সাবমিট করুন
+				<Button
+					type="submit"
+					className="w-80 bg-[#F68821] hover:bg-[#F68821]/90 rounded"
+					disabled={isLoading}
+				>
+					{isLoading ? "অপেক্ষা করুন..." : "সাবমিট করুন"}
 				</Button>
 			</div>
 		</form>
@@ -146,25 +217,3 @@ const CheckoutForm = () => {
 };
 
 export default CheckoutForm;
-
-// {
-
-//     "distributorAdvancePayment": 0,
-//     "discountAmount": 300,
-//     "products": [
-//         {
-//             "productId": "A000034",
-//             "quantity": 1
-//         },
-//         {
-//             "productId": "A000082",
-//             "quantity": 1
-//         }
-//     ],
-//     "distributor": {
-//         "name": "test order from GB",
-//         "phone": "01303110760",
-//         "address": "Rampura, Dhaka"
-//     },
-//     "deliveryCharge": 150
-// }
