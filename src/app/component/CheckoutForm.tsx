@@ -86,7 +86,7 @@ const CheckoutForm = () => {
 					address: formData.address,
 				},
 				deliveryCharge: selectedCharge,
-				// additionalNotes: "Premium Customer Campaign 1",
+				additionalNotes: "Premium Customer Campaign 1",
 			};
 
 			await axios.post(`${getBaseUrl(true)}/nuport`, reqCheckoutBodyForNuport);
