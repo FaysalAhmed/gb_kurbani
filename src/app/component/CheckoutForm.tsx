@@ -52,15 +52,11 @@ const CheckoutForm = () => {
 		register,
 		handleSubmit,
 		formState: { errors },
-		setError,
+
 		clearErrors,
 	} = useForm<FormData>({
 		resolver: zodResolver(FormSchema),
 	});
-
-	const onSubmit = (data: FormData) => {
-		console.log(data);
-	};
 
 	const nuportOrderProductsDetails = [
 		{
@@ -92,10 +88,7 @@ const CheckoutForm = () => {
 				deliveryCharge: selectedCharge,
 			};
 
-			const response = await axios.post(
-				`${getBaseUrl(true)}/nuport`,
-				reqCheckoutBodyForNuport
-			);
+			await axios.post(`${getBaseUrl(true)}/nuport`, reqCheckoutBodyForNuport);
 
 			toast({
 				title: "অর্ডার সফলভাবে সম্পন্ন হয়েছে",
