@@ -9,21 +9,19 @@ import { toast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { getBaseUrl } from "../helper/getBaseUrl";
 import OrderSummary from "./OrderSummary";
 
 const FormSchema = z.object({
 	name: z.string().min(1, "নাম অবশ্যই প্রদান করতে হবে"),
-	// phone: z.string().regex(/^[0-9]+$/, "ফোন নাম্বার অবশ্যই প্রদান করতে হবে"),
 	phone: z
 		.string()
 		.regex(
 			/^(\+88)?01[0-9]{9}$/,
 			"ফোন নাম্বার অবশ্যই প্রদান করতে হবে (যেমন: +8801XXXXXXXXX বা 01XXXXXXXXX)"
 		),
-
 	address: z.string().min(1, "এড্রেস প্রদান করুন"),
 	location: z.enum(["dhaka", "chattogram", "others"], {
 		errorMap: () => ({ message: "অনুগ্রহ করে লোকেশন নির্বাচন করুন" }),
@@ -40,7 +38,7 @@ const CheckoutForm = () => {
 		null: 0,
 	} as const;
 
-	type Location = keyof typeof deliveryCharges; // "dhaka" | "chattogram" | "others" | "null"
+	type Location = keyof typeof deliveryCharges;
 
 	const [selectedLocation, setSelectedLocation] = useState<Location>("null");
 	const [selectedCharge, setSelectedCharge] = useState<number>(
@@ -52,8 +50,8 @@ const CheckoutForm = () => {
 		register,
 		handleSubmit,
 		formState: { errors },
-
 		clearErrors,
+		control,
 	} = useForm<FormData>({
 		resolver: zodResolver(FormSchema),
 	});
@@ -107,7 +105,6 @@ const CheckoutForm = () => {
 		}
 	};
 
-	// Auto-clear errors after 3 seconds
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			if (Object.keys(errors).length > 0) {
@@ -116,6 +113,7 @@ const CheckoutForm = () => {
 		}, 4000);
 		return () => clearTimeout(timer);
 	}, [errors, clearErrors]);
+
 	return (
 		<form
 			onSubmit={handleSubmit(handleSubmitForm)}
@@ -151,31 +149,36 @@ const CheckoutForm = () => {
 
 			<div>
 				<Label>ডেলিভারি চার্জ</Label>
-				<RadioGroup
-					{...register("location")}
-					className="flex flex-col gap-4 mt-2"
-					value={selectedLocation}
-					onValueChange={(value: Location) => {
-						const charge = deliveryCharges[value];
-						setSelectedLocation(value);
-						setSelectedCharge(charge);
-					}}
-				>
-					<div className="flex items-center space-x-2">
-						<RadioGroupItem value="dhaka" id="dhaka" />
-						<Label htmlFor="dhaka">ঢাকা সিটি 70.00</Label>
-					</div>
-					<div className="flex items-center space-x-2">
-						<RadioGroupItem value="chattogram" id="chattogram" />
-						<Label htmlFor="chattogram">চট্টগ্রাম সিটি 70.00</Label>
-					</div>
-					<div className="flex items-center space-x-2">
-						<RadioGroupItem value="others" id="others" />
-						<Label htmlFor="others">
-							ঢাকা এবং চট্টগ্রাম সিটির বাহিরে 130.00
-						</Label>
-					</div>
-				</RadioGroup>
+				<Controller
+					name="location"
+					control={control}
+					render={({ field }) => (
+						<RadioGroup
+							className="flex flex-col gap-4 mt-2"
+							value={field.value}
+							onValueChange={(value: Location) => {
+								field.onChange(value);
+								setSelectedLocation(value);
+								setSelectedCharge(deliveryCharges[value]);
+							}}
+						>
+							<div className="flex items-center space-x-2">
+								<RadioGroupItem value="dhaka" id="dhaka" />
+								<Label htmlFor="dhaka">ঢাকা সিটি 70.00</Label>
+							</div>
+							<div className="flex items-center space-x-2">
+								<RadioGroupItem value="chattogram" id="chattogram" />
+								<Label htmlFor="chattogram">চট্টগ্রাম সিটি 70.00</Label>
+							</div>
+							<div className="flex items-center space-x-2">
+								<RadioGroupItem value="others" id="others" />
+								<Label htmlFor="others">
+									ঢাকা এবং চট্টগ্রাম সিটির বাহিরে 130.00
+								</Label>
+							</div>
+						</RadioGroup>
+					)}
+				/>
 				{errors.location && (
 					<p className="text-red-500 text-xs mt-1">{errors.location.message}</p>
 				)}
@@ -193,11 +196,12 @@ const CheckoutForm = () => {
 					<p className="text-red-500 text-xs mt-1">{errors.address.message}</p>
 				)}
 			</div>
+
 			<div className="my-12">
 				<OrderSummary deliveryCharge={selectedCharge} />
 			</div>
 
-			<div className="ct-flex-center ">
+			<div className="ct-flex-center">
 				<Button
 					type="submit"
 					className="w-80 bg-[#F68821] hover:bg-[#F68821]/90 rounded"
