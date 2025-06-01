@@ -22,12 +22,14 @@ const products = [
 		sku: "A000227",
 		name: "শাহী মসলা/Shahi Masala 50gm",
 		price: "Free",
+		originalPrice: "150",
 	},
 	{
 		image: "/images/Offer-product-kala-bhuna.jpg",
 		sku: "A000226",
 		name: "Kala Bhuna Masala-50gm",
 		price: "Free",
+		originalPrice: "150",
 	},
 ];
 
@@ -61,7 +63,16 @@ const ProductTable = () => {
 							<TableCell>{product.sku}</TableCell>
 							<TableCell>{product.name}</TableCell>
 							<TableCell className="text-right font-semibold">
-								{product.price}
+								{product.price === "Free" && product.originalPrice ? (
+									<div className="ct-flex-end gap-x-2">
+										<span className="line-through text-gray-500 text-sm">
+											{product.originalPrice}
+										</span>
+										<span className="text-green-600">{product.price}</span>
+									</div>
+								) : (
+									product.price
+								)}
 							</TableCell>
 						</TableRow>
 					))}
